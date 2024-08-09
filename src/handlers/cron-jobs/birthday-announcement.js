@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 });
 
 const cronTimer =
-  process.env.NODE_ENV == "PRODUCTION" ? "19 1 * * *" : "*/5 * * * * *";
+  process.env.NODE_ENV == "PRODUCTION" ? "21 1 * * *" : "*/5 * * * * *";
 
 module.exports = (client) => {
   console.log("Scheduling cron job");
