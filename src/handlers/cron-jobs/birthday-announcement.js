@@ -15,6 +15,12 @@ const cronTimer =
   process.env.NODE_ENV == "PRODUCTION" ? "9 0 * * *" : "*/5 * * * * *";
 
 module.exports = (client) => {
+  // schedule the bot to send the birthday celebration at midnight
+  cron.schedule("*/5 * * * * *", () => {
+    if (process.env.NODE_ENV == "DEVELOPMENT") return; // comment this for testing
+    console.log("hey");
+  });
+
   console.log("Scheduling cron job");
   const todaysDate = new Date(Date.now());
   const todaysDay = todaysDate.getDate();
