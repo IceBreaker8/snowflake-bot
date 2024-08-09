@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 });
 
 const cronTimer =
-  process.env.NODE_ENV == "PRODUCTION" ? "41 1 * * *" : "*/5 * * * * *";
+  process.env.NODE_ENV == "PRODUCTION" ? "45 1 * * *" : "*/5 * * * * *";
 
 module.exports = (client) => {
   console.log("Scheduling cron job");
@@ -55,6 +55,12 @@ module.exports = (client) => {
                     const todaysDate = new Date(Date.now());
                     const todaysDay = todaysDate.getDate();
                     const todaysMonth = todaysDate.getMonth() + 1;
+                    console.log(
+                      todaysDay,
+                      parseInt(birthDay),
+                      todaysMonth,
+                      parseInt(birthMonth)
+                    );
                     if (
                       todaysDay == parseInt(birthDay) &&
                       todaysMonth == parseInt(birthMonth)
@@ -62,6 +68,7 @@ module.exports = (client) => {
                       // fetch user
                       client.users.fetch(birthday.user_id).then((user) => {
                         if (user) {
+                          console.log("user:", user);
                           // fetch birthday message
                           const birthdayMessage = `**Happy Birthday ${user}!** 🎈🎂🎉\n${
                             birthday.birthday_message ||
