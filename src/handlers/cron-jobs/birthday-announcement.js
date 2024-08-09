@@ -19,7 +19,7 @@ module.exports = (client) => {
   const todaysDate = new Date(Date.now());
   const todaysDay = todaysDate.getDate();
   const todaysMonth = todaysDate.getMonth() + 1;
-  console.log(todaysDay, todaysMonth, todaysDate);
+  console.log(todaysDay, todaysMonth, todaysDate, cronTimer);
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(
     cronTimer,
