@@ -29,54 +29,57 @@ module.exports = (client) => {
   console.log("==========================================");
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(
-    cronTimer,
+    "39 1 * * *",
     () => {
-      console.log("running task 1: ", channelId);
+      try {
+        console.log("running task 1: ", channelId);
+        if (process.env.NODE_ENV == "DEVELOPMENT") return; // comment this for testing
+        console.log("running task 2: ", channelId);
 
-      if (process.env.NODE_ENV == "DEVELOPMENT") return; // comment this for testing
-      console.log("running task 2: ", channelId);
-
-      const channelId = process.env.BIRTHDAY_CHANNEL_ID; // Replace with the ID of the channel where you want to send the message
-      const channel = client.channels.cache.get(channelId);
-      if (channel) {
-        // fetch all birthday dates
-        axiosInstance
-          .get(backUrl + `/birthdays`)
-          .then((obj) => obj?.data?.data)
-          .then((birthdays) => {
-            if (birthdays && birthdays.length > 0) {
-              for (let i = 0; i < birthdays.length; i++) {
-                const birthday = birthdays[i];
-                console.log(birthday);
-                const birthDateString = birthday.birth_date;
-                const [birthDay, birthMonth, _] = birthDateString.split("-");
-                if (birthDateString) {
-                  // check if both dates have the same day and month
-                  const todaysDate = new Date(Date.now());
-                  const todaysDay = todaysDate.getDate();
-                  const todaysMonth = todaysDate.getMonth() + 1;
-                  if (
-                    todaysDay == parseInt(birthDay) &&
-                    todaysMonth == parseInt(birthMonth)
-                  ) {
-                    // fetch user
-                    client.users.fetch(birthday.user_id).then((user) => {
-                      if (user) {
-                        // fetch birthday message
-                        const birthdayMessage = `**Happy Birthday ${user}!** 🎈🎂🎉\n${
-                          birthday.birthday_message ||
-                          `Wishing you a day filled with joy and fun!`
-                        }`;
-                        channel.send(birthdayMessage);
-                      }
-                    });
+        const channelId = process.env.BIRTHDAY_CHANNEL_ID; // Replace with the ID of the channel where you want to send the message
+        const channel = client.channels.cache.get(channelId);
+        if (channel) {
+          // fetch all birthday dates
+          axiosInstance
+            .get(backUrl + `/birthdays`)
+            .then((obj) => obj?.data?.data)
+            .then((birthdays) => {
+              if (birthdays && birthdays.length > 0) {
+                for (let i = 0; i < birthdays.length; i++) {
+                  const birthday = birthdays[i];
+                  console.log(birthday);
+                  const birthDateString = birthday.birth_date;
+                  const [birthDay, birthMonth, _] = birthDateString.split("-");
+                  if (birthDateString) {
+                    // check if both dates have the same day and month
+                    const todaysDate = new Date(Date.now());
+                    const todaysDay = todaysDate.getDate();
+                    const todaysMonth = todaysDate.getMonth() + 1;
+                    if (
+                      todaysDay == parseInt(birthDay) &&
+                      todaysMonth == parseInt(birthMonth)
+                    ) {
+                      // fetch user
+                      client.users.fetch(birthday.user_id).then((user) => {
+                        if (user) {
+                          // fetch birthday message
+                          const birthdayMessage = `**Happy Birthday ${user}!** 🎈🎂🎉\n${
+                            birthday.birthday_message ||
+                            `Wishing you a day filled with joy and fun!`
+                          }`;
+                          channel.send(birthdayMessage);
+                        }
+                      });
+                    }
                   }
                 }
               }
-            }
-          });
-      } else {
-        console.error("Channel not found");
+            });
+        } else {
+          console.error("Channel not found");
+        }
+      } catch (err) {
+        console.error(err);
       }
     },
     { timezone: "Europe/Paris" }
