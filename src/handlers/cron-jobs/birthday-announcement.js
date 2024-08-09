@@ -19,7 +19,7 @@ module.exports = (client) => {
   const todaysDate = new Date(Date.now());
   const todaysDay = todaysDate.getDate();
   const todaysMonth = todaysDate.getMonth() + 1;
-  console.log(todaysDay, todaysMonth);
+  console.log(todaysDay, todaysMonth, todaysDate);
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(cronTimer, () => {
     if (process.env.NODE_ENV == "DEVELOPMENT") return; // comment this for testing
