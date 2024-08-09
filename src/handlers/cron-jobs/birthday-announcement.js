@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 });
 
 const cronTimer =
-  process.env.NODE_ENV == "PRODUCTION" ? "37 1 * * *" : "*/5 * * * * *";
+  process.env.NODE_ENV == "PRODUCTION" ? "41 1 * * *" : "*/5 * * * * *";
 
 module.exports = (client) => {
   console.log("Scheduling cron job");
@@ -29,12 +29,12 @@ module.exports = (client) => {
   console.log("==========================================");
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(
-    "39 1 * * *",
+    cronTimer,
     () => {
       try {
-        console.log("running task 1: ", channelId);
+        console.log("running task 1: ", process.env.BIRTHDAY_CHANNEL_ID);
         if (process.env.NODE_ENV == "DEVELOPMENT") return; // comment this for testing
-        console.log("running task 2: ", channelId);
+        console.log("running task 2: ", process.env.BIRTHDAY_CHANNEL_ID);
 
         const channelId = process.env.BIRTHDAY_CHANNEL_ID; // Replace with the ID of the channel where you want to send the message
         const channel = client.channels.cache.get(channelId);
