@@ -14,8 +14,11 @@ const axiosInstance = axios.create({
 module.exports = (client) => {
   // make a random API call to make sure the server is up, else throw an error and prevent the bot from going online
   axiosInstance.get(backUrl + `/birthdays`).then(
-    (res) => {},
+    (res) => {
+      console.log(`Backend ${process.env.BACK_URL} loaded successfully.`);
+    },
     (err) => {
+      console.log(`Backend ${process.env.BACK_URL} failed to load.`);
       console.error(err);
     }
   );
