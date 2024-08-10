@@ -18,8 +18,7 @@ const cronTimer =
   process.env.NODE_ENV == "PRODUCTION" ? "0 0 * * *" : "* * * * *";
 
 module.exports = (client) => {
-  console.log("Scheduling cron jobs");
-
+  console.log("Scheduling cron jobs..");
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(
     cronTimer,
@@ -37,7 +36,6 @@ module.exports = (client) => {
               if (birthdays && birthdays.length > 0) {
                 for (let i = 0; i < birthdays.length; i++) {
                   const birthday = birthdays[i];
-                  console.log(birthday);
                   const birthDateString = birthday.birth_date;
                   const [birthDay, birthMonth, _] = birthDateString.split("-");
                   if (birthDateString) {
