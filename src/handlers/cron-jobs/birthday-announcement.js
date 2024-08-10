@@ -1,5 +1,6 @@
 const cron = require("node-cron");
 const axios = require("axios");
+const { DateTime } = require("luxon");
 
 // Create an Axios instance with strapi api token
 const backUrl = process.env.API_URL;
@@ -10,32 +11,21 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
+// define cron global timezone
+const globalTimeZone = "Europe/Paris";
 
 const cronTimer =
-  process.env.NODE_ENV == "PRODUCTION" ? "02 2 * * *" : "*/5 * * * * *";
+  process.env.NODE_ENV == "PRODUCTION" ? "0 0 * * *" : "* * * * *";
 
 module.exports = (client) => {
-  console.log("Scheduling cron job");
-  const todaysDate = new Date(Date.now());
-  const todaysDay = todaysDate.getDate();
-  const todaysMonth = todaysDate.getMonth() + 1;
-  console.log("==========================================");
-  console.log(todaysDay, todaysMonth, todaysDate, cronTimer);
-  console.log(
-    `Job triggered at ${new Date().toLocaleString("en-GB", {
-      timeZone: "Europe/Paris",
-    })}`
-  );
-  console.log("==========================================");
+  console.log("Scheduling cron jobs");
+
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(
     cronTimer,
     () => {
       try {
-        console.log("running task 1: ", process.env.BIRTHDAY_CHANNEL_ID);
         if (process.env.NODE_ENV == "DEVELOPMENT") return; // comment this for testing
-        console.log("running task 2: ", process.env.BIRTHDAY_CHANNEL_ID);
-
         const channelId = process.env.BIRTHDAY_CHANNEL_ID; // Replace with the ID of the channel where you want to send the message
         const channel = client.channels.cache.get(channelId);
         if (channel) {
@@ -47,13 +37,17 @@ module.exports = (client) => {
               if (birthdays && birthdays.length > 0) {
                 for (let i = 0; i < birthdays.length; i++) {
                   const birthday = birthdays[i];
+                  console.log(birthday);
                   const birthDateString = birthday.birth_date;
                   const [birthDay, birthMonth, _] = birthDateString.split("-");
                   if (birthDateString) {
+                    // get paris time dates
+                    const parisDate = DateTime.fromJSDate(new Date(), {
+                      zone: "utc",
+                    }).setZone(globalTimeZone);
                     // check if both dates have the same day and month
-                    const todaysDate = new Date(Date.now());
-                    const todaysDay = todaysDate.getDate();
-                    const todaysMonth = todaysDate.getMonth() + 1;
+                    const todaysDay = parisDate.day;
+                    const todaysMonth = parisDate.month;
                     if (
                       todaysDay == parseInt(birthDay) &&
                       todaysMonth == parseInt(birthMonth)
@@ -61,7 +55,6 @@ module.exports = (client) => {
                       // fetch user
                       client.users.fetch(birthday.user_id).then((user) => {
                         if (user) {
-                          console.log("user:", user);
                           // fetch birthday message
                           const birthdayMessage = `**Happy Birthday ${user}!** 🎈🎂🎉\n${
                             birthday.birthday_message ||
@@ -82,6 +75,6 @@ module.exports = (client) => {
         console.error(err);
       }
     },
-    { timezone: "Europe/Paris" }
+    { timezone: globalTimeZone }
   );
 };
