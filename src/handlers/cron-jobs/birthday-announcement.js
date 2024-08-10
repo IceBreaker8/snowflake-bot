@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 });
 
 const cronTimer =
-  process.env.NODE_ENV == "PRODUCTION" ? "57 1 * * *" : "*/5 * * * * *";
+  process.env.NODE_ENV == "PRODUCTION" ? "02 2 * * *" : "*/5 * * * * *";
 
 module.exports = (client) => {
   console.log("Scheduling cron job");
@@ -47,32 +47,13 @@ module.exports = (client) => {
               if (birthdays && birthdays.length > 0) {
                 for (let i = 0; i < birthdays.length; i++) {
                   const birthday = birthdays[i];
-                  console.log(birthday);
                   const birthDateString = birthday.birth_date;
                   const [birthDay, birthMonth, _] = birthDateString.split("-");
                   if (birthDateString) {
                     // check if both dates have the same day and month
-                    const date = new Date();
-                    const options = {
-                      timeZone: "Europe/Paris",
-                      day: "numeric",
-                      month: "numeric",
-                      year: "numeric",
-                    };
-                    const todaysDate = new Intl.DateTimeFormat(
-                      "en-GB",
-                      options
-                    ).format(date);
-
-                    console.log(todaysDate);
+                    const todaysDate = new Date(Date.now());
                     const todaysDay = todaysDate.getDate();
                     const todaysMonth = todaysDate.getMonth() + 1;
-                    console.log(
-                      todaysDay,
-                      parseInt(birthDay),
-                      todaysMonth,
-                      parseInt(birthMonth)
-                    );
                     if (
                       todaysDay == parseInt(birthDay) &&
                       todaysMonth == parseInt(birthMonth)
