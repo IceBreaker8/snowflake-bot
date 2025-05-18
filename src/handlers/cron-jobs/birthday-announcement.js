@@ -15,7 +15,7 @@ const axiosInstance = axios.create({
 const globalTimeZone = "Europe/Paris";
 
 const cronTimer =
-  process.env.NODE_ENV == "PRODUCTION" ? "0 0 * * *" : "* * * * *";
+  process.env.NODE_ENV == "PRODUCTION" ? "0 0 * * *" : "*/5 * * * *";
 
 module.exports = (client) => {
   console.log("Scheduling cron jobs..");
