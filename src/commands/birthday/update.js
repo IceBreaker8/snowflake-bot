@@ -10,6 +10,7 @@ module.exports = async (client, interaction) => {
   const month = interaction.options.getString("month");
   const year = interaction.options.getString("year");
   const timezone = interaction.options.getString("timezone");
+  const removeYear = year?.toLowerCase() === "none";
   const userId = interaction.user.id;
   const guildId = interaction.guild.id;
 
@@ -39,8 +40,8 @@ module.exports = async (client, interaction) => {
     }
   }
 
-  // Validate year range if provided
-  if (year) {
+  // Validate year range if provided (skip if user wants to remove it)
+  if (year && !removeYear) {
     const parsedYear = parseInt(year, 10);
     if (parsedYear < 1900 || parsedYear > new Date().getFullYear()) {
       logger.info(`[Birthday:Update] Invalid year for user ${userId}: ${year}`);
@@ -53,7 +54,7 @@ module.exports = async (client, interaction) => {
 
   // Validate date fields against the existing birthday to prevent invalid combinations
   // e.g. changing year to a non-leap year when day is 29 and month is 2
-  if (day || month || year) {
+  if (day || month || year || removeYear) {
     try {
       const { data: current } = await api.get(
         `/birthdays/discord/${userId}/guild/${guildId}`,
@@ -69,8 +70,9 @@ module.exports = async (client, interaction) => {
 
       const validateDay = day || String(current.birthDay);
       const validateMonth = month || String(current.birthMonth);
-      const validateYear =
-        year || (current.birthYear ? String(current.birthYear) : "2024");
+      const validateYear = removeYear
+        ? "2024"
+        : year || (current.birthYear ? String(current.birthYear) : "2024");
 
       if (!client.validateDate(validateDay, validateMonth, validateYear)) {
         logger.info(
@@ -85,8 +87,8 @@ module.exports = async (client, interaction) => {
       const errorMessage =
         err?.response?.data?.message || "An unexpected error occurred.";
       logger.error(
-        `[Birthday:Update] Error fetching current birthday for user ${userId}:`,
-        errorMessage,
+        { err: err?.response?.data, userId },
+        `[Birthday:Update] Error fetching current birthday for user ${userId}`,
       );
       return interaction.reply({
         content: errorMessage,
@@ -100,7 +102,8 @@ module.exports = async (client, interaction) => {
     const updateData = {};
     if (day) updateData.birthDay = parseInt(day, 10);
     if (month) updateData.birthMonth = parseInt(month, 10);
-    if (year) updateData.birthYear = parseInt(year, 10);
+    if (removeYear) updateData.birthYear = null;
+    else if (year) updateData.birthYear = parseInt(year, 10);
     if (timezone) updateData.timezone = timezone;
 
     await api.patch(
@@ -116,7 +119,10 @@ module.exports = async (client, interaction) => {
   } catch (err) {
     const errorMessage =
       err?.response?.data?.message || "An unexpected error occurred.";
-    logger.error(`[Birthday:Update] Error for user ${userId}:`, errorMessage);
+    logger.error(
+      { err: err?.response?.data, userId },
+      `[Birthday:Update] Error for user ${userId}`,
+    );
     return interaction.reply({
       content: errorMessage,
       ephemeral: true,

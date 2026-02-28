@@ -16,28 +16,30 @@ module.exports = {
             .setName("day")
             .setDescription("The day of the birth date")
             .setRequired(true)
-            .setMaxLength(2)
+            .setMaxLength(2),
         )
         .addStringOption((option) =>
           option
             .setName("month")
             .setDescription("The month of the birth date")
             .setRequired(true)
-            .setMaxLength(2)
+            .setMaxLength(2),
         )
         .addStringOption((option) =>
           option
             .setName("timezone")
-            .setDescription("Your timezone (e.g. America/New_York, Europe/London)")
+            .setDescription(
+              "Your timezone (e.g. America/New_York, Europe/London)",
+            )
             .setRequired(true)
-            .setAutocomplete(true)
+            .setAutocomplete(true),
         )
         .addStringOption((option) =>
           option
             .setName("year")
             .setDescription("The year of the birth date")
-            .setMaxLength(4)
-        )
+            .setMaxLength(4),
+        ),
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -47,34 +49,38 @@ module.exports = {
           option
             .setName("day")
             .setDescription("The day of the birth date")
-            .setMaxLength(2)
+            .setMaxLength(2),
         )
         .addStringOption((option) =>
           option
             .setName("month")
             .setDescription("The month of the birth date")
-            .setMaxLength(2)
+            .setMaxLength(2),
         )
         .addStringOption((option) =>
           option
             .setName("timezone")
-            .setDescription("Your timezone (e.g. America/New_York, Europe/London)")
-            .setAutocomplete(true)
+            .setDescription(
+              "Your timezone (e.g. America/New_York, Europe/London)",
+            )
+            .setAutocomplete(true),
         )
         .addStringOption((option) =>
           option
             .setName("year")
-            .setDescription("The year of the birth date")
-            .setMaxLength(4)
-        )
+            .setDescription(
+              'The year of the birth date (type "none" to remove)',
+            )
+            .setAutocomplete(true),
+        ),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("remove")
-        .setDescription("Remove your birthday from Snowflake")
+        .setDescription("Remove your birthday from Snowflake"),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName("view").setDescription("View your set birthday")
+      subcommand.setName("view").setDescription("View your set birthday"),
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -87,14 +93,14 @@ module.exports = {
             .setRequired(true)
             .addChoices(
               { name: "public", value: "public" },
-              { name: "private", value: "private" }
-            )
-        )
+              { name: "private", value: "private" },
+            ),
+        ),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("list")
-        .setDescription("View the list of all publicly set birthdays")
+        .setDescription("View the list of all publicly set birthdays"),
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -104,8 +110,8 @@ module.exports = {
           option
             .setName("user")
             .setDescription("The year of the birth date")
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     ),
   autocomplete: async (client, interaction) => {
     const focused = interaction.options.getFocused(true);
@@ -119,6 +125,17 @@ module.exports = {
       await interaction.respond(
         filtered.map((tz) => ({ name: tz, value: tz })),
       );
+    }
+
+    if (focused.name === "year") {
+      const choices = [{ name: "Remove year", value: "none" }];
+
+      // If the user typed a number, show it as an option
+      if (focused.value && /^\d+$/.test(focused.value)) {
+        choices.unshift({ name: focused.value, value: focused.value });
+      }
+
+      await interaction.respond(choices);
     }
   },
 
