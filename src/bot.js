@@ -3,6 +3,7 @@ require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
 const { Collection, Events } = require("discord.js");
+const logger = require("./utils/logger");
 
 const { Client, GatewayIntentBits, codeBlock } = require("discord.js");
 const client = new Client({
@@ -15,10 +16,10 @@ const client = new Client({
 });
 
 client.on("ready", () => {
-  console.log(
+  logger.info(
     `Starting Snowflake${
-      process.env.NODE_ENV == "DEVELOPMENT" ? ".Dev" : ""
-    } in ${process.env.NODE_ENV} environment: ${client.user.tag}`
+      process.env.NODE_ENV == "development" ? ".Dev" : ""
+    } in ${process.env.NODE_ENV} environment: ${client.user.tag}`,
   );
 });
 

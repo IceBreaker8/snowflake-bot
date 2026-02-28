@@ -1,25 +1,14 @@
-const axios = require("axios");
-const { EmbedBuilder } = require("discord.js");
-
-// Create an Axios instance with strapi api token
-const backUrl = process.env.API_URL;
-
-const axiosInstance = axios.create({
-  headers: {
-    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
+const api = require("../../utils/api");
+const logger = require("../../utils/logger");
 
 module.exports = (client) => {
   // make a random API call to make sure the server is up, else throw an error and prevent the bot from going online
-  axiosInstance.get(backUrl + `/birthdays`).then(
+  api.get("/healthz").then(
     (res) => {
-      console.log(`Backend ${backUrl} loaded successfully.`);
+      logger.info(`Backend ${process.env.API_URL} loaded successfully`);
     },
     (err) => {
-      console.log(`Backend ${backUrl} failed to load.`);
-      console.error(err);
+      logger.error({ err }, `Backend ${process.env.API_URL} failed to load`);
     }
   );
 };

@@ -1,53 +1,40 @@
-const axios = require("axios");
-// Create an Axios instance with strapi api token
-const backUrl = process.env.API_URL;
+const api = require("../../utils/api");
+const logger = require("../../utils/logger");
 
-const axiosInstance = axios.create({
-  headers: {
-    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
+/**
+ * Handles the /birthday remove subcommand.
+ * Deletes the user's birthday entry via the API.
+ */
+module.exports = async (client, interaction) => {
+  const discordId = interaction.user.id;
+  const guildId = interaction.guild.id;
 
-module.exports = async (client, interaction, args) => {
-  const userId = interaction.user.id;
+  logger.info(`[Birthday:Remove] User ${discordId} requested birthday removal`);
 
-  return await axiosInstance
-    .get(backUrl + `/birthdays?filters[user_id][$eq]=${userId}`)
-    .then((obj) => obj.data)
-    .then(
-      (birthdays) => {
-        const birthday = birthdays?.data?.[0];
-        // remove birthday if exists
-        if (birthday) {
-          return axiosInstance
-            .delete(backUrl + `/birthdays/${birthday.documentId}`)
-            .then(
-              (res) => {
-                return interaction.reply({
-                  content: "Snowflake has successfully removed your birthday",
-                  ephemeral: true,
-                });
-              },
-              (err) => {
-                return interaction.reply({
-                  content: err?.response?.data?.error?.message,
-                  ephemeral: true,
-                });
-              }
-            );
-        } else {
-          return interaction.reply({
-            content: "You didn't set a birthday in Snowflake yet",
-            ephemeral: true,
-          });
-        }
-      },
-      (err) => {
-        return interaction.reply({
-          content: err?.response?.data?.error?.message,
-          ephemeral: true,
-        });
-      }
+  try {
+    await api.delete(
+      `/birthdays/discord/${discordId}/guild/${guildId}`,
     );
+
+    logger.info(`[Birthday:Remove] Successfully removed birthday for user ${discordId}`);
+    return interaction.reply({
+      content: "Snowflake has successfully removed your birthday.",
+      ephemeral: true,
+    });
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      return interaction.reply({
+        content: "You didn't set a birthday in Snowflake yet.",
+        ephemeral: true,
+      });
+    }
+
+    const errorMessage =
+      err?.response?.data?.message || "An unexpected error occurred.";
+    logger.error(`[Birthday:Remove] Error for user ${discordId}:`, errorMessage);
+    return interaction.reply({
+      content: errorMessage,
+      ephemeral: true,
+    });
+  }
 };

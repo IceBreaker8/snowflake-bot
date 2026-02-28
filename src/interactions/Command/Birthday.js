@@ -1,7 +1,7 @@
-const { CommandInteraction, Client } = require("discord.js");
 const { SlashCommandBuilder } = require("discord.js");
-const { ChannelType } = require("discord.js");
-const Discord = require("discord.js");
+
+// Common IANA timezones for autocomplete suggestions
+const TIMEZONES = Intl.supportedValuesOf("timeZone");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,6 +24,42 @@ module.exports = {
             .setDescription("The month of the birth date")
             .setRequired(true)
             .setMaxLength(2)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("timezone")
+            .setDescription("Your timezone (e.g. America/New_York, Europe/London)")
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("year")
+            .setDescription("The year of the birth date")
+            .setMaxLength(4)
+        )
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("update")
+        .setDescription("Update your birthday in Snowflake")
+        .addStringOption((option) =>
+          option
+            .setName("day")
+            .setDescription("The day of the birth date")
+            .setMaxLength(2)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("month")
+            .setDescription("The month of the birth date")
+            .setMaxLength(2)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("timezone")
+            .setDescription("Your timezone (e.g. America/New_York, Europe/London)")
+            .setAutocomplete(true)
         )
         .addStringOption((option) =>
           option
@@ -55,11 +91,11 @@ module.exports = {
             )
         )
     )
-    /*.addSubcommand((subcommand) =>
+    .addSubcommand((subcommand) =>
       subcommand
         .setName("list")
         .setDescription("View the list of all publicly set birthdays")
-    ),*/
+    )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("lookup")
@@ -71,11 +107,22 @@ module.exports = {
             .setRequired(true)
         )
     ),
-  /**
-   * @param {Client} client
-   * @param {CommandInteraction} interaction
-   * @param {String[]} args
-   */ run: async (client, interaction, args) => {
-    client.loadSubcommands(client, interaction, args); //
+  autocomplete: async (client, interaction) => {
+    const focused = interaction.options.getFocused(true);
+
+    if (focused.name === "timezone") {
+      // Filter timezones by what the user has typed so far
+      const filtered = TIMEZONES.filter((tz) =>
+        tz.toLowerCase().includes(focused.value.toLowerCase()),
+      ).slice(0, 25); // Discord allows max 25 autocomplete choices
+
+      await interaction.respond(
+        filtered.map((tz) => ({ name: tz, value: tz })),
+      );
+    }
+  },
+
+  run: async (client, interaction, args) => {
+    client.loadSubcommands(client, interaction, args);
   },
 };

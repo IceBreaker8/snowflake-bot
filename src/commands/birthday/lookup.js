@@ -1,57 +1,63 @@
-const axios = require("axios");
+const api = require("../../utils/api");
 const { EmbedBuilder } = require("discord.js");
+const logger = require("../../utils/logger");
 
-// Create an Axios instance with strapi api token
-const backUrl = process.env.API_URL;
-
-const axiosInstance = axios.create({
-  headers: {
-    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
-
-module.exports = async (client, interaction, args) => {
-  // check if discord member has the Snowflake Birthday role
+/**
+ * Handles the /birthday lookup subcommand.
+ * Looks up another user's birthday if their visibility is set to public.
+ */
+module.exports = async (client, interaction) => {
   const fetchedUser = interaction.options.getUser("user");
-  console.log(fetchedUser);
+  const guildId = interaction.guild.id;
 
-  // get all birthdays from strapi's DB
-  const fetchedBirthday = await axiosInstance
-    .get(backUrl + `/birthdays?filters[user_id][$eq]=${fetchedUser.id}`)
-    .then((obj) => obj?.data?.data?.[0]);
+  logger.info(`[Birthday:Lookup] User ${interaction.user.id} looking up birthday for ${fetchedUser.id}`);
 
-  if (!fetchedBirthday) {
-    return interaction.reply({
-      content: "This user hasn't set a birthday yet",
-      ephemeral: true,
-    });
-  }
+  try {
+    const { data: birthday } = await api.get(
+      `/birthdays/discord/${fetchedUser.id}/guild/${guildId}`,
+    );
 
-  if (!fetchedBirthday.visibility || fetchedBirthday.visibility == "private") {
-    return interaction.reply({
-      content: "This user has set their birthday to Private",
-      ephemeral: true,
-    });
-  }
+    // Respect the user's privacy setting
+    if (birthday.visibility === "private") {
+      logger.info(`[Birthday:Lookup] Birthday for user ${fetchedUser.id} is private`);
+      return interaction.reply({
+        content: "This user has set their birthday to private.",
+        ephemeral: true,
+      });
+    }
 
-  // construct the birthday embed
-  const birthdayListEmbed = new EmbedBuilder()
-    .setTitle("Birthday")
-    .setColor(0x0099ff)
+    // Format the date for display
+    const dateStr = `${client.addZeroAndTrim(birthday.birthDay)}-${client.addZeroAndTrim(birthday.birthMonth)}${birthday.birthYear ? `-${birthday.birthYear}` : ""}`;
 
-    .setThumbnail(fetchedUser.displayAvatarURL({ dynamic: true, size: 1024 }))
-
-    .addFields(
-      {
+    // Build and send the birthday embed
+    const birthdayEmbed = new EmbedBuilder()
+      .setTitle("Birthday")
+      .setColor(0x0099ff)
+      .setThumbnail(fetchedUser.displayAvatarURL({ dynamic: true, size: 1024 }))
+      .addFields({
         name: "\u200b",
-        value: `${fetchedUser}: ${fetchedBirthday.birth_date}`,
-      } // This field will appear empty
-    )
-    .setTimestamp()
-    .setFooter({
-      text: "Snowflake",
-    });
+        value: `${fetchedUser}: ${dateStr}`,
+      })
+      .setTimestamp()
+      .setFooter({ text: "Snowflake" });
 
-  await interaction.reply({ embeds: [birthdayListEmbed], ephemeral: true });
+    logger.info(`[Birthday:Lookup] Displaying birthday for user ${fetchedUser.id}`);
+    return interaction.reply({ embeds: [birthdayEmbed], ephemeral: true });
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      logger.info(`[Birthday:Lookup] No birthday found for target user ${fetchedUser.id}`);
+      return interaction.reply({
+        content: "This user hasn't set a birthday yet.",
+        ephemeral: true,
+      });
+    }
+
+    const errorMessage =
+      err?.response?.data?.message || "An unexpected error occurred.";
+    logger.error(`[Birthday:Lookup] Error looking up user ${fetchedUser.id}:`, errorMessage);
+    return interaction.reply({
+      content: errorMessage,
+      ephemeral: true,
+    });
+  }
 };

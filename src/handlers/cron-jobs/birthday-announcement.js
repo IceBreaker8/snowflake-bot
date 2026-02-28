@@ -1,16 +1,8 @@
 const cron = require("node-cron");
-const axios = require("axios");
+const api = require("../../utils/api");
 const { DateTime } = require("luxon");
+const logger = require("../../utils/logger");
 
-// Create an Axios instance with strapi api token
-const backUrl = process.env.API_URL;
-
-const axiosInstance = axios.create({
-  headers: {
-    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
 // define cron global timezone
 const globalTimeZone = "Europe/Paris";
 
@@ -18,7 +10,7 @@ const cronTimer =
   process.env.NODE_ENV == "PRODUCTION" ? "0 0 * * *" : "*/5 * * * *";
 
 module.exports = (client) => {
-  console.log("Scheduling cron jobs..");
+  logger.info("Scheduling cron jobs...");
   // schedule the bot to send the birthday celebration at midnight
   cron.schedule(
     cronTimer,
@@ -29,8 +21,8 @@ module.exports = (client) => {
         const channel = client.channels.cache.get(channelId);
         if (channel) {
           // fetch all birthday dates
-          axiosInstance
-            .get(backUrl + `/birthdays`)
+          api
+            .get("/birthdays")
             .then((obj) => obj?.data?.data)
             .then((birthdays) => {
               if (birthdays && birthdays.length > 0) {
@@ -67,10 +59,10 @@ module.exports = (client) => {
               }
             });
         } else {
-          console.error("Channel not found");
+          logger.error("Channel not found");
         }
       } catch (err) {
-        console.error(err);
+        logger.error({ err }, "Birthday announcement cron job error");
       }
     },
     { timezone: globalTimeZone }

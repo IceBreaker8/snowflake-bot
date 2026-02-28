@@ -1,101 +1,83 @@
-const axios = require("axios");
-// Create an Axios instance with strapi api token
-const backUrl = process.env.API_URL;
+const api = require("../../utils/api");
+const logger = require("../../utils/logger");
 
-const axiosInstance = axios.create({
-  headers: {
-    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
-
-module.exports = async (client, interaction, args) => {
-  // command options
+/**
+ * Handles the /birthday set subcommand.
+ * Validates user input, checks for duplicates, and stores a new birthday in Strapi.
+ */
+module.exports = async (client, interaction) => {
   const day = interaction.options.getString("day");
   const month = interaction.options.getString("month");
   const year = interaction.options.getString("year");
-
-  // date validation
-  if (!client.validateDate(day, month, year || "2024")) {
-    // 2024 for leap years, so the users can input their dates as dd-MM without a year
-    return await interaction.reply({
-      content: "The date is not valid",
-      ephemeral: true,
-    });
-  }
-  if ((year && year < 1900) || year > new Date().getFullYear()) {
-    // restrict non logical ages
-    return await interaction.reply({
-      content: "The year is not valid",
-      ephemeral: true,
-    });
-  }
-
-  // check if discord member has the Snowflake Birthday role
+  const timezone = interaction.options.getString("timezone");
   const userId = interaction.user.id;
-  const user = await client.users.fetch(userId);
-  /*const member = await interaction.guild.members.fetch(interaction.user.id);
-  if (
-    !member.roles.cache.map((role) => role.name).includes("Snowflake Birthday")
-  ) {
-    return await interaction.reply({
-      content:
-        "You are not authorized to use the Birthday commands, you need the Snowflake Birthday role, ask admins to assign you this role",
-      ephemeral: true,
-    });
-  }*/
+  const guildId = interaction.guild.id;
+  const parsedYear = parseInt(year || "2000", 10);
 
-  // check if user has already added their birthday
-  const doesBirthdayExist = await axiosInstance
-    .get(backUrl + `/birthdays?filters[user_id][$eq]=${userId}`)
-    .then((object) => object.data)
-    .then(
-      (birthdays) => {
-        if (birthdays?.data?.length > 0) return true;
-        return false;
-      },
-      (err) => {
-        return interaction.reply({
-          content: err?.response?.data?.error?.message,
-          ephemeral: true,
-        });
-      }
+  logger.info(
+    `[Birthday:Set] User ${userId} attempting to set birthday: ${day}-${month}${year ? `-${year}` : ""} (${timezone})`,
+  );
+
+  // Validate the IANA timezone identifier
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+  } catch {
+    logger.info(
+      `[Birthday:Set] Invalid timezone for user ${userId}: ${timezone}`,
     );
-
-  if (doesBirthdayExist) {
-    return await interaction.reply({
-      content: "You have already added your birthday!",
+    return interaction.reply({
+      content:
+        "Invalid timezone. Use a valid IANA timezone like `America/New_York` or `Europe/London`.",
       ephemeral: true,
     });
   }
 
-  /**
-   * adding birthday date
-   */
+  // Validate the date (default to 2024 for leap-year support when no year is provided)
+  if (!client.validateDate(day, month, year || "2024")) {
+    logger.info(`[Birthday:Set] Invalid date for user ${userId}`);
+    return interaction.reply({
+      content: "The date is not valid.",
+      ephemeral: true,
+    });
+  }
 
-  return await axiosInstance
-    .post(backUrl + `/birthdays?filters[user_id][$eq]=${userId}`, {
-      data: {
-        user_id: userId,
-        user_global_name: user.globalName,
-        birth_date: `${client.addZeroAndTrim(day)}-${client.addZeroAndTrim(
-          month
-        )}${year ? `-${year}` : ""}`,
-      },
-    })
-    .then((object) => object.data)
-    .then(
-      (birthday) => {
-        return interaction.reply({
-          content: "Your birthday has been added, view it using /birthday view",
-          ephemeral: true,
-        });
-      },
-      (err) => {
-        return interaction.reply({
-          content: err?.response?.data?.error?.message,
-          ephemeral: true,
-        });
-      }
+  // Restrict year to a logical range
+  if (year && (parsedYear < 1900 || parsedYear > new Date().getFullYear())) {
+    logger.info(`[Birthday:Set] Invalid year for user ${userId}: ${year}`);
+    return interaction.reply({
+      content: "The year is not valid.",
+      ephemeral: true,
+    });
+  }
+
+  try {
+    const user = await client.users.fetch(userId);
+
+    await api.post("/birthdays", {
+      discordId: userId,
+      guildId,
+      name: user.globalName,
+      birthDay: parseInt(day, 10),
+      birthMonth: parseInt(month, 10),
+      birthYear: year ? parsedYear : null,
+      timezone,
+    });
+
+    logger.info(`[Birthday:Set] Birthday stored for user ${userId}`);
+    return interaction.reply({
+      content: "Your birthday has been added, view it using /birthday view",
+      ephemeral: true,
+    });
+  } catch (err) {
+    const errorMessage =
+      err?.response?.data?.message || "An unexpected error occurred.";
+    logger.error(
+      { err: err?.response?.data, userId },
+      `[Birthday:Set] Error for user ${userId}`,
     );
+    return interaction.reply({
+      content: errorMessage,
+      ephemeral: true,
+    });
+  }
 };
