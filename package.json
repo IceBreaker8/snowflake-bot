@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node src/bot.js",
     "dev": "node --watch-path=./src src/bot.js",
-    "test": "node ."
+    "test": "node .",
+    "docker:build": "docker build -t snowflake-bot .",
+    "docker:run": "docker run --rm --env-file .env snowflake-bot"
   },
   "keywords": [],
   "author": "IceBreaker",
