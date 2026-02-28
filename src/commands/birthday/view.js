@@ -1,6 +1,7 @@
 const api = require("../../utils/api");
 const { EmbedBuilder } = require("discord.js");
 const logger = require("../../utils/logger");
+const formatBirthday = require("../../utils/format-birthday");
 
 /**
  * Handles the /birthday view subcommand.
@@ -17,17 +18,17 @@ module.exports = async (client, interaction) => {
       `/birthdays/discord/${discordId}/guild/${guildId}`,
     );
 
-    const dateStr = `${client.addZeroAndTrim(birthday.birthDay)}-${client.addZeroAndTrim(birthday.birthMonth)}${birthday.birthYear ? `-${birthday.birthYear}` : ""}`;
+    const dateStr = formatBirthday(birthday.birthDay, birthday.birthMonth, birthday.birthYear);
     const user = interaction.user;
 
     const birthdayEmbed = new EmbedBuilder()
-      .setTitle("Your Birthday")
-      .setColor(0x0099ff)
+      .setTitle("\u{1F382} Your Birthday")
+      .setColor(0xf8a5c2)
       .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 1024 }))
       .addFields(
-        { name: "Date", value: dateStr, inline: true },
-        { name: "Timezone", value: birthday.timezone, inline: true },
-        { name: "Visibility", value: birthday.visibility, inline: true },
+        { name: "\u{1F4C5} Date", value: dateStr, inline: true },
+        { name: "\u{1F30D} Timezone", value: birthday.timezone, inline: true },
+        { name: birthday.visibility === "public" ? "\u{1F513} Public" : "\u{1F512} Private", value: "\u200b", inline: true },
       )
       .setTimestamp()
       .setFooter({ text: "Snowflake" });
@@ -47,7 +48,10 @@ module.exports = async (client, interaction) => {
 
     const errorMessage =
       err?.response?.data?.message || "An unexpected error occurred.";
-    logger.error(`[Birthday:View] Error for user ${discordId}:`, errorMessage);
+    logger.error(
+      { err: err?.response?.data, discordId },
+      `[Birthday:View] Error for user ${discordId}`,
+    );
     return interaction.reply({
       content: errorMessage,
       ephemeral: true,

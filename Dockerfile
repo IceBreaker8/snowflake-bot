@@ -1,18 +1,18 @@
-# Use the official Node.js image as a base image
-FROM node:18-alpine
+FROM node:24-alpine
 
-# Set the working directory inside the container
+ENV NODE_ENV=production
+
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
 WORKDIR /app
 
-# Copy the package.json and package-lock.json
-COPY package*.json ./
+COPY --chown=appuser:appgroup package*.json ./
 
-# Install dependencies
-RUN npm install
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy the rest of your application code
-COPY . .
+COPY --chown=appuser:appgroup src ./src
 
+USER 1001
 
-# Command to run the bot
-CMD ["node","src/bot.js"]
+CMD ["node", "src/bot.js"]

@@ -1,6 +1,7 @@
 const api = require("../../utils/api");
 const { EmbedBuilder } = require("discord.js");
 const logger = require("../../utils/logger");
+const formatBirthday = require("../../utils/format-birthday");
 
 /**
  * Handles the /birthday lookup subcommand.
@@ -27,16 +28,16 @@ module.exports = async (client, interaction) => {
     }
 
     // Format the date for display
-    const dateStr = `${client.addZeroAndTrim(birthday.birthDay)}-${client.addZeroAndTrim(birthday.birthMonth)}${birthday.birthYear ? `-${birthday.birthYear}` : ""}`;
+    const dateStr = formatBirthday(birthday.birthDay, birthday.birthMonth, birthday.birthYear);
 
     // Build and send the birthday embed
     const birthdayEmbed = new EmbedBuilder()
-      .setTitle("Birthday")
-      .setColor(0x0099ff)
+      .setTitle(`\u{1F382} ${fetchedUser.displayName}'s Birthday`)
+      .setColor(0xf8a5c2)
       .setThumbnail(fetchedUser.displayAvatarURL({ dynamic: true, size: 1024 }))
       .addFields({
-        name: "\u200b",
-        value: `${fetchedUser}: ${dateStr}`,
+        name: "\u{1F4C5} Date",
+        value: dateStr,
       })
       .setTimestamp()
       .setFooter({ text: "Snowflake" });
@@ -54,7 +55,10 @@ module.exports = async (client, interaction) => {
 
     const errorMessage =
       err?.response?.data?.message || "An unexpected error occurred.";
-    logger.error(`[Birthday:Lookup] Error looking up user ${fetchedUser.id}:`, errorMessage);
+    logger.error(
+      { err: err?.response?.data, userId: fetchedUser.id },
+      `[Birthday:Lookup] Error looking up user ${fetchedUser.id}`,
+    );
     return interaction.reply({
       content: errorMessage,
       ephemeral: true,

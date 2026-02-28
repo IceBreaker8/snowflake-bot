@@ -1,6 +1,7 @@
 const api = require("../../utils/api");
 const { EmbedBuilder } = require("discord.js");
 const logger = require("../../utils/logger");
+const formatBirthday = require("../../utils/format-birthday");
 
 /**
  * Handles the /birthday list subcommand.
@@ -22,19 +23,19 @@ module.exports = async (client, interaction) => {
     const resolvedBirthdays = await Promise.all(
       publicBirthdays.map(async (birthday) => {
         const member = await interaction.guild.members.fetch(birthday.discordId);
-        const dateStr = `${client.addZeroAndTrim(birthday.birthDay)}-${client.addZeroAndTrim(birthday.birthMonth)}${birthday.birthYear ? `-${birthday.birthYear}` : ""}`;
+        const dateStr = formatBirthday(birthday.birthDay, birthday.birthMonth, birthday.birthYear);
         return { member, dateStr };
       }),
     );
 
     // Build the display string
     const embedValue = resolvedBirthdays
-      .map(({ member, dateStr }) => `${member}: ${dateStr}`)
+      .map(({ member, dateStr }) => `\u{1F382} ${member} — ${dateStr}`)
       .join("\n");
 
     const birthdayListEmbed = new EmbedBuilder()
-      .setTitle("Birthdays")
-      .setColor(0x0099ff)
+      .setTitle("\u{1F389} Server Birthdays")
+      .setColor(0xf8a5c2)
       .setThumbnail(
         "https://img.icons8.com/?size=100&id=123624&format=png&color=000000",
       )
@@ -49,7 +50,10 @@ module.exports = async (client, interaction) => {
   } catch (err) {
     const errorMessage =
       err?.response?.data?.message || "An unexpected error occurred.";
-    logger.error(`[Birthday:List] Error:`, errorMessage);
+    logger.error(
+      { err: err?.response?.data },
+      `[Birthday:List] Error`,
+    );
     return interaction.reply({
       content: errorMessage,
       ephemeral: true,

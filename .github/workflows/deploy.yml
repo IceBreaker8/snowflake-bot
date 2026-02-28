@@ -1,0 +1,39 @@
+name: Docker Image CI for Harbor
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: harbor-a41d6h4d1d61ad1d7fdh5zd.wynnaspects.com
+  IMAGE_NAME: snowflake/snowflake-bot
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get short commit hash
+        id: get_commit_hash
+        run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Log in to Harbor
+        run: echo "${{ secrets.SNOWFLAKE_HARBOR_BOT_PASS }}" | docker login ${{ env.REGISTRY }} -u '${{ secrets.SNOWFLAKE_HARBOR_BOT_USER }}' --password-stdin
+
+      - name: Set tags based on branch
+        id: set_tags
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "TAGS=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:prod-${COMMIT_HASH},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:prod-latest" >> $GITHUB_ENV
+          fi
+
+      - name: Build and push Docker image
+        run: |
+          IFS=',' read -ra TAG_ARRAY <<< "$TAGS"
+          for TAG in "${TAG_ARRAY[@]}"; do
+            docker build . --tag $TAG
+            docker push $TAG
+          done
